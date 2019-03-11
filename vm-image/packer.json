@@ -1,0 +1,47 @@
+{
+
+  "variables": {
+    "project_id": "{{env `GOOGLE_PROJECT_ID`}}`",
+    "zone": "{{env `GOOGLE_ZONE`}}"
+  },
+
+  "builders": [
+
+    {
+      "type": "googlecompute",
+
+      "project_id": "{{user `project_id`}}",
+      "source_image_family": "centos-7",
+      "zone": "",
+
+      "machine_type": "f1-micro",
+      "disk_size": "10",
+      "disk_type":"pd-ssd",
+
+      "image_name": " foundations-sample",
+      "image_family": "foundations-sample",
+      "image_description": "",
+      "image_labels": {
+
+      }
+
+    }
+
+  ],
+
+  "provisioners": [
+
+  { "type": "shell",
+    "pause_before": "10s",
+    "inline": [
+      "sudo yum -y install nginx"
+    ]
+  },
+
+  { "type": "inspec",
+    "profile": "inspec-sample"
+  }
+
+  ]
+
+}
