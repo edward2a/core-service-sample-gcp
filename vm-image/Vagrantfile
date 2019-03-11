@@ -10,4 +10,37 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box         = 'centos/7'
   config.vm.box_version = '1902.01'
 
+  packer_config = load_packer_config('packer.json')
+
+  provisioner_processor(config, packer_config["provisioners"])
+
+end
+
+
+
+def load_packer_config(path)
+  return JSON.parse(IO.read(path))
+end
+
+def provisioner_processor(config, p_list)
+  p_list.each do |p|
+
+    case p['type']
+
+      # Handle file provisioner
+      when 'file'
+        config.vm.provision :file, source: p['source'], destination: p['destination']
+
+      # Handle shell provisioner
+      when 'shell'
+        if p['inline']
+          config.vm.provision :shell, inline: p['inline'].join("\n") + "\n"
+
+        elsif p['script']
+          config.vm.provision :shell, path: p['script']
+
+        end #if
+
+    end # case
+  end # p_list.each
 end
