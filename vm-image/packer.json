@@ -31,9 +31,15 @@
 
   "provisioners": [
 
+  { "type": "file",
+    "source": "./files",
+    "destination": "/tmp/"
+  },
+
   { "type": "shell",
     "pause_before": "10s",
     "inline": [
+      "sudo cp /tmp/files/repos/nginx.repo /etc/yum.repos.d/",
       "sudo yum -y install nginx"
     ]
   },
