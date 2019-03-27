@@ -1,0 +1,97 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+# TODO: provisioning
+# install yum: git bzip2 gcc make
+# install others: rbenv ruby 2.5.5
+
+
+require 'yaml'
+require 'net/ssh'
+
+
+VAGRANTFILE_API_VERSION = '2'
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  pub_key  = './runtime_vm_key.pub'
+  priv_key = './runtime_vm_key.priv'
+
+  if ! File.exist?(priv_key)
+    create_vm_keys(priv_key, pub_key)
+  end
+  cfg = configure()
+
+  config.vm.box = 'google/gce'
+
+  config.vm.provider :google do |google, override|
+
+    google.google_project_id = cfg['google_project_id']
+    google.google_client_email = cfg['google_account_email']
+    google.google_json_key_location = cfg['google_key_location']
+    google.network_project_id = cfg['google_network_project_id']
+    google.network = cfg['google_network']
+    google.subnetwork = cfg['google_subnetwork']
+    google.zone = cfg['google_zone']
+    google.use_private_ip = false
+
+    google.image_family = 'centos-7'
+    google.machine_type = 'g1-small'
+    google.metadata     = {
+      'ssh-keys': 'runtime:' + File.read(pub_key)
+    }
+
+    override.ssh.username = 'runtime'
+    override.ssh.private_key_path = priv_key
+
+  end
+
+end
+
+
+def configure()
+
+  cfg_file = '.runtime_vm_config.yml'
+
+  if File.exist?(cfg_file)
+    puts('Loading configuration...')
+    cfg = YAML.load(File.read(cfg_file))
+  else
+    puts('Configuration file not found, please provide the required information.')
+    cfg = {}
+    cfg['google_project_id']          = input('Google project ID: ')
+    cfg['google_account_email']       = input('Google account email: ')
+    cfg['google_key_location']        = input('Google key file location: ')
+    cfg['vm_service_account']         = input('Service account for the VM: ')
+    cfg['google_network_project_id']  = input('Google network project ID: ')
+    cfg['google_network']             = input('Google network for the VM: ')
+    cfg['google_subnetwork']          = input('Google subnetwork for the VM: ')
+    cfg['google_zone']                = input('Google zone for the VM: ')
+
+    cfg_f = File.open(cfg_file, 'w')
+    cfg_f.write(YAML.dump(cfg))
+    cfg_f.close()
+  end
+
+  return cfg
+
+end
+
+def create_vm_keys(priv_key, pub_key)
+  key = OpenSSL::PKey::RSA.new 2048
+  pub_blob = [key.public_key.to_blob].pack('m0')
+
+  key_f = File.open(priv_key, 'w')
+  key_f.write(key.to_pem)
+  key_f.close()
+
+  pub_f = File.open(pub_key, 'w')
+  pub_f.write("#{key.ssh_type} #{pub_blob}")
+  pub_f.close()
+end
+
+def input(prompt=nil)
+  print(prompt)
+  return STDIN.gets.strip
+end
