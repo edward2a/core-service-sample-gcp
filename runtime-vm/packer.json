@@ -39,7 +39,7 @@
     { "type": "shell",
       "pause_before": "10s",
       "inline": [
-        "sudo -c yum install -y git bzip2 unzip gcc gcc-c++ make curl openssl-devel readline-devel zlib-devel",
+        "sudo yum install -y git bzip2 unzip gcc gcc-c++ make curl openssl-devel readline-devel zlib-devel",
         "curl -fsSL -o ~/rbenv-installer https://github.com/rbenv/rbenv-installer/raw/master/bin/rbenv-installer",
         "bash ~/rbenv-installer",
         "grep -q PATH= ~/.bashrc || echo \"PATH=${PATH}:~/.rbenv/bin:~/.rbenv/shims\" >> ~/.bashrc",
