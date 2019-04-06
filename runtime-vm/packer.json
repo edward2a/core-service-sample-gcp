@@ -1,0 +1,59 @@
+{
+
+  "variables": {
+    "project_id": "{{env `GOOGLE_PROJECT_ID`}}`",
+    "zone": "{{env `GOOGLE_ZONE`}}"
+  },
+
+  "builders": [
+
+    {
+      "type": "googlecompute",
+
+      "project_id": "{{user `project_id`}}",
+      "source_image_family": "centos-7",
+      "zone": "",
+
+      "machine_type": "g1-small",
+      "disk_size": "10",
+      "disk_type":"pd-ssd",
+
+      "image_name": " foundations-sample",
+      "image_family": "foundations-sample",
+      "image_description": "",
+      "image_labels": {
+
+      }
+
+    }
+
+  ],
+
+  "provisioners": [
+
+    { "type": "file",
+      "source": "./files",
+      "destination": "/tmp/"
+    },
+
+    { "type": "shell",
+      "pause_before": "10s",
+      "inline": [
+        "sudo -c yum install -y git bzip2 unzip gcc gcc-c++ make curl openssl-devel readline-devel zlib-devel",
+        "curl -fsSL -o ~/rbenv-installer https://github.com/rbenv/rbenv-installer/raw/master/bin/rbenv-installer",
+        "bash ~/rbenv-installer",
+        "grep -q PATH= ~/.bashrc || echo \"PATH=${PATH}:~/.rbenv/bin:~/.rbenv/shims\" >> ~/.bashrc",
+        ". ~/.bashrc",
+        "which ruby || rbenv install 2.5.5",
+        "rbenv global 2.5.5",
+        "echo 'gem: --no-ri --no-rdoc' >> ~/.gemrc",
+        "gem install inspec",
+        "curl -fsSL -o terraform.zip 'https://releases.hashicorp.com/terraform/0.11.13/terraform_0.11.13_linux_amd64.zip'",
+        "sudo unzip -d /usr/local/bin/ terraform.zip",
+        "sudo chmod 755 /usr/local/bin/terraform.zip"
+      ]
+    }
+
+    ]
+
+}
