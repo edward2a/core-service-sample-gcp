@@ -18,13 +18,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   pub_key  = './runtime_vm_key.pub'
   priv_key = './runtime_vm_key.priv'
 
+  # Create ssh key-pair
   if ! File.exist?(priv_key)
     create_vm_keys(priv_key, pub_key)
   end
+
+  # Load config
   cfg = configure()
+  packer_config = load_packer_config('packer.json')
 
+  # Configure and lauch VM
   config.vm.box = 'google/gce'
-
   config.vm.provider :google do |google, override|
 
     google.google_project_id = cfg['google_project_id']
@@ -47,10 +51,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   end
 
+  # Provision VM
+  provisioner_processor(config, packer_config["provisioners"])
+
 end
 
 
 def configure()
+  # Load config from file, create if not exists
 
   cfg_file = '.runtime_vm_config.yml'
 
@@ -79,6 +87,8 @@ def configure()
 end
 
 def create_vm_keys(priv_key, pub_key)
+  # Create ssh key-pair
+
   key = OpenSSL::PKey::RSA.new 2048
   pub_blob = [key.public_key.to_blob].pack('m0')
 
@@ -92,6 +102,35 @@ def create_vm_keys(priv_key, pub_key)
 end
 
 def input(prompt=nil)
+  # Ask for user input from STDIN
   print(prompt)
   return STDIN.gets.strip
+end
+
+def load_packer_config(path)
+  # Load json
+  return JSON.parse(IO.read(path))
+end
+
+def provisioner_processor(config, p_list)
+  p_list.each do |p|
+
+    case p['type']
+
+      # Handle file provisioner
+      when 'file'
+        config.vm.provision :file, source: p['source'], destination: p['destination']
+
+      # Handle shell provisioner
+      when 'shell'
+        if p['inline']
+          config.vm.provision :shell, inline: p['inline'].join("\n") + "\n"
+
+        elsif p['script']
+          config.vm.provision :shell, path: p['script']
+
+        end #if
+
+    end # case
+  end # p_list.each
 end
