@@ -124,10 +124,10 @@ def provisioner_processor(config, p_list)
       # Handle shell provisioner
       when 'shell'
         if p['inline']
-          config.vm.provision :shell, inline: p['inline'].join("\n") + "\n"
+          config.vm.provision :shell, privileged: false, inline: p['inline'].join("\n") + "\n"
 
         elsif p['script']
-          config.vm.provision :shell, path: p['script']
+          config.vm.provision :shell, privileged: false, path: p['script']
 
         end #if
 
